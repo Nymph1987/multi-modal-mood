@@ -1,0 +1,59 @@
+
+
+# -------------------------------
+# Python
+# -------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+*.egg-info/
+
+# -------------------------------
+# 深度学习常见大文件
+# -------------------------------
+# 数据目录
+data/
+history/
+datasets/
+
+# 模型参数与 checkpoint
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+save/
+outputs/
+
+# 训练日志 & 可视化结果
+logs/
+runs/
+*.log
+*.out
+
+# 缓存文件
+*.pkl
+*.npz
+*.npy
+*.h5
+*.hdf5
+
+# -------------------------------
+# IDE & 编辑器文件
+# -------------------------------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+data/
+*.pkl
+*.pt
+*.pth

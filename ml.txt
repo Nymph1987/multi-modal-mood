@@ -1,0 +1,6 @@
+python preprocess.py --data data/iemocap/newdata.pkl --dataset iemocap
+
+
+python my_prediction.py --data=./data/iemocap/newdata.pkl --device=cuda --batch_size=20 --n_speakers 2
+
+python my_pre.py --data=./data/iemocap/newdata.pkl --device=cuda --batch_size=20 --n_speakers 2
