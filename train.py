@@ -6,10 +6,11 @@ import sys
 import torch
 import himallgg
 
+
 # ------------------ 日志设置 ------------------
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, "train_log1.txt")
+log_file = os.path.join(log_dir, "train_log_mamba+lstm.txt")
 
 log = himallgg.utils.get_logger()
 
@@ -130,6 +131,16 @@ if __name__ == "__main__":
     parser.add_argument("--integrity_alpha", type=float, default=1.0, help="Weight for reconstruction MSE")
     parser.add_argument("--integrity_beta", type=float, default=1.0, help="Weight for text consistency")
     parser.add_argument("--integrity_weight", type=float, default=1.0, help="Global weight for integrity loss sum")
+
+
+    parser.add_argument("--use_mamba_modal", action="store_true")
+    parser.add_argument("--use_mamba_global", action="store_true")
+    parser.add_argument("--use_mamba_sgcn", action="store_true")
+    parser.add_argument("--mamba_layers", type=int, default=2)
+    parser.add_argument("--mamba_d_state", type=int, default=16)
+    parser.add_argument("--mamba_d_conv", type=int, default=3)
+    parser.add_argument("--mamba_expand", type=int, default=2)
+
 
     # Others
     parser.add_argument("--seed", type=int, default=24, help="Random seed.")

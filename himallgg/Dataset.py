@@ -10,7 +10,7 @@ class Dataset:
     def __init__(self, samples, batch_size, missing_rate=0.0, missing_modalities=None, seed=42, device="cuda:0"):
         self.device = device
         self.batch_size = batch_size
-        # random.seed(seed)  # 注释掉这行，避免重复设置种子
+        random.seed(seed)
 
         # ====== 自动转换 dict-of-lists 到 list-of-dicts ======
         if isinstance(samples, dict):

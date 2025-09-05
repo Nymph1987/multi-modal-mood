@@ -1,5 +1,22 @@
 python preprocess.py --data data/iemocap/newdata.pkl --dataset iemocap
 
+#第一套
+
+#mamba + gru
+CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda     --batch_size 32     --epochs 80     --rnn gru     --missing_rate 0.3     --missing_modalities tav     --integrity_weight 1.0     --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
+
+#mamba +lstm
+CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda    --batch_size 32     --epochs 80     --rnn lstm       --missing_modalities tav     --integrity_weight 1.0     --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
+
+#评估命令 使用时修改rnn gru/lstm
+python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda --batch_size 32 --rnn lstm --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+python my_pre.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda --batch_size 32 --rnn lstm --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+
+
+#第二套
+python train.py --dataset iemocap --data data/iemocap/newdata.pkl --rnn mamba  --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --epoch 80 --device cuda --from_begin 
 
 python my_prediction.py --data=./data/iemocap/newdata.pkl --device=cuda --batch_size=20 --n_speakers 2
 
