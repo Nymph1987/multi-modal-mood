@@ -22,8 +22,9 @@ env/
 # -------------------------------
 # 数据目录
 data/
-./history/
+history/
 datasets/
+logs/
 
 # 模型参数与 checkpoint
 *.pt

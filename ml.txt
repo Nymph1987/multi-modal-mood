@@ -3,15 +3,40 @@ python preprocess.py --data data/iemocap/newdata.pkl --dataset iemocap
 #第一套
 
 #mamba + gru
-CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda     --batch_size 32     --epochs 80     --rnn gru     --missing_rate 0.3     --missing_modalities tav     --integrity_weight 1.0     --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
+CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda  
+   --batch_size 32     --epochs 80     --rnn gru        --missing_modalities tav     --integrity_weight 1.0    
+    --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
 
 #mamba +lstm
-CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda    --batch_size 32     --epochs 80     --rnn lstm       --missing_modalities tav     --integrity_weight 1.0     --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
+ CUDA_VISIBLE_DEVICES=0 python train.py     --data data/iemocap/newdata.pkl     --dataset iemocap   --from_begin     --device cuda    --batch_size 32     --epochs 80     --rnn lstm       --missing_modalities tav     --integrity_weight 1.0     --use_mamba_modal     --use_mamba_global     --use_mamba_sgcn     --mamba_layers 2     --mamba_d_state 16     --mamba_d_conv 3     --mamba_expand 2
+
+nohup /data/emotional/.conda/envs/himul-lgg-mamba/bin/python train.py \
+    --data data/iemocap/newdata.pkl \
+    --dataset iemocap \
+    --from_begin \
+    --device cuda \
+    --batch_size 32 \
+    --epochs 80 \
+    --rnn lstm \
+    --missing_modalities tav \
+    --integrity_weight 1.0 \
+    --use_mamba_modal \
+    --use_mamba_global \
+    --use_mamba_sgcn \
+    --mamba_layers 2 \
+    --mamba_d_state 16 \
+    --mamba_d_conv 3 \
+    --mamba_expand 2 \
+    > train_mamba+lstm.log 2>&1 &
+
+
 
 #评估命令 使用时修改rnn gru/lstm
-python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda --batch_size 32 --rnn lstm --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda --batch_size 32 --rnn lstm --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
 
 python my_pre.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda --batch_size 32 --rnn lstm --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+
 
 
 
@@ -21,3 +46,52 @@ python train.py --dataset iemocap --data data/iemocap/newdata.pkl --rnn mamba  -
 python my_prediction.py --data=./data/iemocap/newdata.pkl --device=cuda --batch_size=20 --n_speakers 2
 
 python my_pre.py --data=./data/iemocap/newdata.pkl --device=cuda --batch_size=20 --n_speakers 2
+
+
+
+
+python train_4class.py --dataset iemocap --data data/iemocap/newdata.pkl --rnn mamba  --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0 --epoch 80 --device cuda --from_begin 
+
+
+
+#加入图对比学习
+
+python train_4class.py --data data/iemocap/newdata.pkl --device cuda:0 --epochs 80 --batch_size 32 \
+  --use_graphcl --graphcl_weight 1.0 --graphcl_tau 0.5 --graphcl_proj_dim 64 \
+  --graphcl_aug_type mask_features --graphcl_aug_ratio 0.2 \
+  --pretrain_full_epochs 10
+
+
+
+#基线 gru
+CUDA_VISIBLE_DEVICES=0 python train.py --data data/iemocap/newdata.pkl --dataset iemocap --from_begin --device cuda --batch_size 32 --epochs 80 --rnn gru --missing_modalities tav --integrity_weight 1.0
+
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn gru --ckpt save/IEMOCAP/modeltav.pt --missing_modalities tav --eval_missing_rates "0.0,0.3"
+
+#mamba_d_conv
+CUDA_VISIBLE_DEVICES=0 python train.py --data data/iemocap/newdata.pkl --dataset iemocap --from_begin --device cuda --batch_size 32 --epochs 80 --rnn mamba --missing_rate 0.3 --missing_modalities tav --integrity_weight 1.0
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn mamba --ckpt save/IEMOCAP/modeltav_mamba+lstm.pt --missing_modalities tav --eval_missing_rates "0.0,0.3"
+
+#lstm+mamba
+CUDA_VISIBLE_DEVICES=0 python train.py --data data/iemocap/newdata.pkl --dataset iemocap --from_begin --device cuda --batch_size 32 --epochs 80 --rnn lstm --missing_modalities tav --integrity_weight 1.0 --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn lstm --ckpt save/IEMOCAP/modeltav_mamba+lstm.pt --missing_modalities tav --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+#mamba+granphCL
+CUDA_VISIBLE_DEVICES=0 python train_4class.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --epochs 80 --batch_size 32 --rnn mamba --use_graphcl --graphcl_weight 1.0 --graphcl_tau 0.5 --graphcl_proj_dim 64 --graphcl_aug_type mask_features --graphcl_aug_ratio 0.2 --pretrain_full_epochs 10 --missing_modalities tav --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn mamba --ckpt save/IEMOCAP/model_4class.pt --missing_modalities tav --eval_missing_rates "0.0,0.3,0.5" --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+#GraphCL +lstm
+CUDA_VISIBLE_DEVICES=0 python train_4class.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --epochs 80 --batch_size 32 --rnn lstm --use_graphcl --graphcl_weight 1.0 --graphcl_tau 0.5 --graphcl_proj_dim 64 --graphcl_aug_type mask_features --graphcl_aug_ratio 0.2 --pretrain_full_epochs 10 --missing_modalities tav
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn lstm --ckpt save/IEMOCAP/model_4class.pt --missing_modalities tav --eval_missing_rates "0.0,0.3,0.5"
+
+
+#mamba + LSTM + GraphCL
+CUDA_VISIBLE_DEVICES=0 python train_4class.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --epochs 80 --batch_size 32 --rnn lstm --use_graphcl --graphcl_weight 1.0 --graphcl_tau 0.5 --graphcl_proj_dim 64 --graphcl_aug_type mask_features --graphcl_aug_ratio 0.2 --pretrain_full_epochs 10 --missing_modalities tav --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2 --from_begin
+
+CUDA_VISIBLE_DEVICES=0 python my_prediction.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn lstm --ckpt save/IEMOCAP/model_4class_all.pt --missing_modalities tav --eval_missing_rates "0.0,0.3,0.5" --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+CUDA_VISIBLE_DEVICES=0 python my_pre.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --batch_size 32 --rnn lstm --ckpt save/IEMOCAP/model_4class_all.pt --missing_modalities tav  --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2
+
+#temp
+
+CUDA_VISIBLE_DEVICES=0 python train_4class.py --data data/iemocap/newdata.pkl --dataset iemocap --device cuda:0 --epochs 20 --batch_size 32 --rnn lstm --use_graphcl --graphcl_weight 1.0 --graphcl_tau 0.5 --graphcl_proj_dim 64 --graphcl_aug_type mask_features --graphcl_aug_ratio 0.2 --pretrain_full_epochs 10 --missing_modalities tav --use_mamba_modal --use_mamba_global --use_mamba_sgcn --mamba_layers 2 --mamba_d_state 16 --mamba_d_conv 3 --mamba_expand 2 

@@ -16,84 +16,86 @@ class MaskedEmotionAtt(nn.Module):
         super(MaskedEmotionAtt, self).__init__()
         self.lin = nn.Linear(input_dim, input_dim)
 
-    def forward(self, h, text_len_tensor):
-        batch_size = text_len_tensor.size(0)
-        x = self.lin(h)  # [total_nodes, H]
-        ret = torch.zeros_like(h)
-        s = 0
-        for bi in range(batch_size):
-            cur_len = text_len_tensor[bi].item()
-            y = x[s: s + cur_len]
-            z = h[s: s + cur_len]
-            scores = torch.mm(z, y.t())  # [L, L]
-            probs = F.softmax(scores, dim=1)
-            out = z.unsqueeze(0) * probs.unsqueeze(-1)  # [1, L, H] x [L, L, 1] --> [L, L, H]
-            out = torch.sum(out, dim=1)  # [L, H]
-            ret[s: s + cur_len, :] = out
-            s += cur_len
-        return ret
+    def forward(self, h, text_len_tensor=None):
+        # 这里不用 text_len_tensor，直接返回全量特征
+        return self.lin(h)
 
 
 class Classifier(nn.Module):
     """
     单节点分类器
-    支持 MaskedEmotionAtt、dropout、两层全连接和 NLLLoss
-    方案A：仅对有效节点计算
     """
     def __init__(self, input_dim, hidden_size, tag_size, args):
         super(Classifier, self).__init__()
-        self.emotion_att = MaskedEmotionAtt(input_dim)
         self.lin1 = nn.Linear(input_dim, hidden_size)
         self.drop = nn.Dropout(args.drop_rate)
-        self.lin2 = nn.Linear(hidden_size, tag_size)
+        self.lin2 = nn.Linear(hidden_size, tag_size)  # tag_size=4/6
 
         if getattr(args, "class_weight", False):
-            self.loss_weights = torch.tensor([1 / 0.086747, 1 / 0.144406, 1 / 0.227883,
-                                              1 / 0.160585, 1 / 0.127711, 1 / 0.252668]).to(args.device)
+            # 你可以根据数据分布修改权重
+            self.loss_weights = torch.tensor([1.0]*tag_size).to(args.device)
             self.nll_loss = nn.NLLLoss(weight=self.loss_weights)
         else:
             self.nll_loss = nn.NLLLoss()
 
-    def get_prob(self, h, text_len_tensor):
+    def get_prob(self, h, text_len_tensor=None):
         """
-        返回 log_softmax 概率，仅保留有效节点
-        h: [total_nodes, feature_dim]
-        text_len_tensor: [B]
+        h: [total_nodes, feat_dim]
+        返回 log_softmax([total_nodes, tag_size])
         """
         hidden = self.drop(F.relu(self.lin1(h)))
         scores = self.lin2(hidden)
-        log_prob_full = F.log_softmax(scores, dim=-1)  # [B*pad_len, num_classes]
+        log_prob = F.log_softmax(scores, dim=-1)  # [total_nodes, tag_size]
+        return log_prob
 
-        # 按实际长度展开有效节点
-        s = 0
-        log_prob_nodes = []
-        for L in text_len_tensor:
-            L = L.item()
-            log_prob_nodes.append(log_prob_full[s: s + L])
-            s += L
-        log_prob_nodes = torch.cat(log_prob_nodes, dim=0)  # [total_valid_nodes, num_classes]
-        return log_prob_nodes
-
-    def forward(self, h, text_len_tensor):
-        """
-        返回预测标签 y_hat，仅有效节点
-        """
+    def forward(self, h, text_len_tensor=None):
         log_prob = self.get_prob(h, text_len_tensor)
         y_hat = torch.argmax(log_prob, dim=-1)
         return y_hat
 
-    def get_loss(self, h, label_tensor, text_len_tensor):
-        """
-        方案A: 仅取有效长度节点计算 loss
-        h: [total_nodes, feature_dim]
-        label_tensor: [B, max_len], 已padding
-        text_len_tensor: [B]
-        """
-        log_prob = self.get_prob(h, text_len_tensor)  # [total_valid_nodes, num_classes]
-
-        # 展开有效节点的 label
-        label_list = [label_tensor[i, :L] for i, L in enumerate(text_len_tensor)]
-        label_nodes = torch.cat(label_list, dim=0)  # [total_valid_nodes]
-
-        loss = self.nll_loss(log_prob, label_nodes)
+    def get_loss(self, h, label_tensor, text_len_tensor=None):
+        log_prob = self.get_prob(h, text_len_tensor)
+        loss = self.nll_loss(log_prob, label_tensor)
         return loss
+
+
+# class Classifier(nn.Module):
+#     """
+#     单节点分类器，四分类版本
+#     """
+#     def __init__(self, input_dim, hidden_size, tag_size, args):
+#         super(Classifier, self).__init__()
+#         self.emotion_att = MaskedEmotionAtt(input_dim)
+#         self.lin1 = nn.Linear(input_dim, hidden_size)
+#         self.drop = nn.Dropout(args.drop_rate)
+#         self.lin2 = nn.Linear(hidden_size, tag_size)  # tag_size=4
+
+#         if getattr(args, "class_weight", False):
+#             # 四分类对应的权重，可根据四分类数据的分布调整
+#             self.loss_weights = torch.tensor([1.0, 1.0, 1.0, 1.0], device=args.device)
+#             self.nll_loss = nn.NLLLoss(weight=self.loss_weights)
+#         else:
+#             self.nll_loss = nn.NLLLoss()
+
+#     def get_prob(self, h, text_len_tensor=None):
+#         """
+#         直接对 h（[total_nodes, feat_dim]）输出 log_prob
+#         """
+#         h = self.emotion_att(h, text_len_tensor)
+#         hidden = self.drop(F.relu(self.lin1(h)))
+#         scores = self.lin2(hidden)
+#         log_prob = F.log_softmax(scores, dim=-1)  # [total_nodes, 4]
+#         return log_prob
+
+#     def forward(self, h, text_len_tensor=None):
+#         log_prob = self.get_prob(h, text_len_tensor)
+#         y_hat = torch.argmax(log_prob, dim=-1)
+#         return y_hat
+
+#     def get_loss(self, h, label_tensor, text_len_tensor=None):
+#         """
+#         h: [total_nodes, feat_dim], label_tensor: [total_nodes]
+#         """
+#         log_prob = self.get_prob(h, text_len_tensor)
+#         loss = self.nll_loss(log_prob, label_tensor)
+#         return loss

@@ -150,11 +150,11 @@ def split_iemocap(args):
     # 加载原始特征
     video_ids, video_speakers, video_labels, video_text, \
         video_audio, video_visual, video_sentence, trainVids, \
-        test_vids = pickle.load(open('data/iemocap/IEMOCAP_features.pkl', 'rb'), encoding='latin1')
+        test_vids = pickle.load(open('data/iemocap/IEMOCAP_features_4class.pkl', 'rb'), encoding='latin1')
 
     # 加载 roberta 特征（可选）
     [speakers, labels, roberta1, roberta2, roberta3, roberta4, sentences, train_ids, test_ids, valid_ids] = \
-        pickle.load(open('data/iemocap/iemocap_features_roberta.pkl','rb'))
+        pickle.load(open('data/iemocap/iemocap_features_roberta_modified.pkl','rb'))
 
     # 划分 train/dev/test
     dev_size = int(len(trainVids) * 0.1)

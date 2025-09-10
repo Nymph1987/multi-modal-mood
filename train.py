@@ -10,7 +10,7 @@ import himallgg
 # ------------------ 日志设置 ------------------
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, "train_log_mamba+lstm.txt")
+log_file = os.path.join(log_dir, "train_gru.txt")
 
 log = himallgg.utils.get_logger()
 
@@ -67,7 +67,7 @@ def main(args):
     testset = build_ds("test")
 
     log.debug("Building model...")
-    model_file = "./save/IEMOCAP/modeltav.pt"  # 可根据数据集切换保存目录
+    model_file = "./save/IEMOCAP/modeltav_mamba+lstm.pt"  # 可根据数据集切换保存目录
     model = himallgg.LGGCN(args).to(args.device)
     opt = himallgg.Optim(args.learning_rate, args.max_grad_value, args.weight_decay)
     opt.set_parameters(model.parameters(), args.optimizer)
@@ -132,6 +132,16 @@ if __name__ == "__main__":
     parser.add_argument("--integrity_beta", type=float, default=1.0, help="Weight for text consistency")
     parser.add_argument("--integrity_weight", type=float, default=1.0, help="Global weight for integrity loss sum")
 
+    # GraphCL 对比学习（默认关闭，不影响现有训练）
+    parser.add_argument("--use_graphcl", action="store_true", help="Enable GraphCL contrastive learning as graph reconstructor")
+    parser.add_argument("--graphcl_weight", type=float, default=1.0, help="Weight for GraphCL contrastive loss")
+    parser.add_argument("--graphcl_tau", type=float, default=0.5, help="Temperature for NT-Xent")
+    parser.add_argument("--graphcl_proj_dim", type=int, default=64, help="Projection head output dimension")
+    parser.add_argument("--graphcl_aug_type", type=str, default="mask_features", choices=["identity", "mask_features", "drop_edges"], help="Graph augmentation type for GraphCL")
+    parser.add_argument("--graphcl_aug_ratio", type=float, default=0.2, help="Augmentation ratio for GraphCL")
+
+    # 两阶段训练
+    parser.add_argument("--pretrain_full_epochs", type=int, default=0, help="Number of epochs to pretrain with full modalities (no missing)")
 
     parser.add_argument("--use_mamba_modal", action="store_true")
     parser.add_argument("--use_mamba_global", action="store_true")
