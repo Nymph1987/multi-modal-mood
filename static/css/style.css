@@ -1,0 +1,128 @@
+/* Global Styles */
+/* static/css/style.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.status-ok {
+    color: green;
+    font-weight: bold;
+}
+
+/* Layout */
+.main-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+}
+
+/* Video Section */
+.video-section {
+    flex: 1;
+    min-width: 300px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.video-container {
+    width: 100%;
+    max-width: 640px;
+    border: 1px solid #ccc;
+    background: #000;
+    line-height: 0; /* Remove space under image */
+}
+
+#video-stream {
+    width: 100%;
+    height: auto;
+}
+
+.current-result {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+}
+
+.emotion-display {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 15px;
+    background-color: #e8f4f8;
+    border-radius: 5px;
+    color: #2980b9;
+}
+
+/* Log Section */
+.log-section {
+    flex: 1;
+    min-width: 300px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.log-table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+footer {
+    text-align: center;
+    margin-top: 50px;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}

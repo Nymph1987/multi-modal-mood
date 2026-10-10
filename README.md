@@ -81,11 +81,11 @@ python -m pip check
 当前机器启动命令：
 
 ```bash
-cd /mnt/F/emotional/himal-my-model/himalgg_web_1
 export LOCAL_WHISPER_DIR="$PWD/faster-whisper-large-v3"
 export ASR_LOCAL_FILES_ONLY=1
 export ASR_LANGUAGE=zh
-/mnt/F/emotional/miniconda3/envs/himalgg/bin/python app.py
+python app.py
 ```
 
-新环境使用自己的 `python app.py`。打开 `http://localhost:8000`，授权后选择真实麦克风。通过 `/startup_status` 查看模型错误，Whisper 会在首次转写时加载。远程采集通常需要 HTTPS；当前服务不应直接暴露到公网。
+新环境使用自己的 `python app.py`。打开 `http://localhost:8000`，授权后选择真实麦克风。通过 `/startup_status` 查看模型错误，Whisper 会在首次转写时加载。
+请注意，远程采集通常需要 HTTPS；当前服务不应直接暴露到公网。

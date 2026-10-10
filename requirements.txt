@@ -1,0 +1,45 @@
+# Python 3.9 运行依赖；按 app/core 与本地模型接口整理，不是 Conda 环境导出。
+# 版本范围参考现有包元数据，尚未验证从空环境安装；安装后执行 python -m pip check。
+
+# Web：Uvicorn 的 WebSocket 传输后端需显式安装。
+fastapi>=0.128,<0.129
+uvicorn>=0.39,<0.40
+websockets>=15,<16
+python-multipart>=0.0.20,<0.0.21
+jinja2>=3.1.6,<4
+pydantic>=2,<3
+
+# 数值与视觉：YOLO ONNX 实际由 OpenCV DNN 执行，不直接使用 onnxruntime-gpu。
+# 保留 NumPy 1.x，避免现有 OpenCV 等二进制扩展的 ABI 变化。
+numpy>=1.26.4,<2
+scipy>=1.13,<1.14
+opencv-python>=4.8,<4.12
+
+# Torch/Torchaudio 必须安装相同发行版本、相同 CPU/CUDA 渠道；范围本身不保证配对。
+# GPU wheel 先按 README 从官方匹配驱动的渠道安装，不在此固定平台后缀。
+# 保留现有 2.4 环境；Wav2Vec2 旧 bin 仅允许 torch>=2.6，或提供完整可信 safetensors。
+# 2.6 升级须在独立环境验证，不可关闭代码中的安全检查。
+torch>=2.4,<2.7
+torchaudio>=2.4,<2.7
+transformers>=4.57.1,<4.58
+packaging>=20,<26
+
+# Mini-Xception 使用 tf.keras 在 CPU 加载 HDF5；不安装 TensorFlow CUDA extra。
+# Keras/h5py 是该加载路径的依赖，保持现有 Python 3.9 版本系列。
+tensorflow>=2.20,<2.21
+keras>=3.10,<3.11
+h5py>=3.11,<4
+
+# 语音：Silero 使用包内 TorchScript；CTranslate2/PyAV 支持转写和视频音轨解码。
+librosa>=0.11,<0.12
+faster-whisper>=1.2.1,<1.3
+ctranslate2>=4.8.2,<4.9
+av>=15.1,<16
+silero-vad>=6.0,<7
+speechbrain>=1.0.3,<1.1
+hyperpyyaml>=1.2.3,<1.3
+ruamel.yaml>=0.18,<0.19
+
+# 文本：英文极性回退与中文繁转简；中文情绪规则不依赖外部神经模型。
+textblob>=0.19,<0.20
+opencc-python-reimplemented>=0.1.7,<0.2

@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Emotion AI</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Dynamic Theme Variables */
+            --primary-hue: 220; /* Blue default */
+            --primary-color: hsl(var(--primary-hue), 90%, 60%);
+            --primary-glow: hsl(var(--primary-hue), 90%, 60%, 0.5);
+            --bg-gradient-start: hsl(var(--primary-hue), 30%, 95%);
+            --bg-gradient-end: hsl(var(--primary-hue), 20%, 90%);
+            
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --surface-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.05);
+            --glass-blur: blur(12px);
+        }
+
+        /* Emotion Themes */
+        [data-emotion="happy"] { --primary-hue: 45; }   /* Yellow/Gold */
+        [data-emotion="joy"] { --primary-hue: 45; }     /* Yellow/Gold */
+        [data-emotion="sad"] { --primary-hue: 200; }    /* Rain Blue */
+        [data-emotion="sadness"] { --primary-hue: 200; } /* Rain Blue */
+        [data-emotion="angry"] { --primary-hue: 0; }     /* Red */
+        [data-emotion="anger"] { --primary-hue: 0; }     /* Red */
+        [data-emotion="neutral"] { --primary-hue: 220; } /* Calm Blue */
+        [data-emotion="surprise"] { --primary-hue: 280; }/* Purple */
+        [data-emotion="fear"] { --primary-hue: 260; }    /* Deep Violet */
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            transition: background 1s ease;
+        }
+
+        /* Layout */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            grid-template-rows: auto 1fr;
+            gap: 24px;
+            padding: 24px;
+            height: 100vh;
+            box-sizing: border-box;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transition: all 0.5s ease;
+        }
+
+        /* Main Video Area */
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            border: 4px solid var(--surface-border);
+            transition: border-color 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        video, #server-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Audio Placeholder */
+        .audio-placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1e293b;
+            color: white;
+            z-index: 5;
+            display: none;
+        }
+
+        .audio-wave {
+            display: flex;
+            gap: 6px;
+            height: 60px;
+            align-items: center;
+        }
+
+        .bar {
+            width: 8px;
+            background: var(--primary-color);
+            border-radius: 4px;
+            animation: soundWave 1s infinite ease-in-out;
+        }
+        .bar:nth-child(2) { animation-delay: 0.1s; height: 80%; }
+        .bar:nth-child(3) { animation-delay: 0.2s; height: 60%; }
+        .bar:nth-child(4) { animation-delay: 0.3s; height: 90%; }
+        .bar:nth-child(5) { animation-delay: 0.4s; height: 50%; }
+
+        @keyframes soundWave {
+            0%, 100% { height: 20%; opacity: 0.5; }
+            50% { height: 100%; opacity: 1; }
+        }
+
+        /* Dashboard Sidebar */
+        .dashboard {
+            background: var(--surface-color);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* Emotion Hero Card */
+        .hero-card {
+            background: linear-gradient(135deg, var(--primary-color), white);
+            border-radius: var(--radius-md);
+            padding: 2px; /* Border gradient trick */
+            box-shadow: 0 10px 20px -5px var(--primary-glow);
+            transition: all 0.5s ease;
+        }
+
+        .hero-inner {
+            background: rgba(255,255,255,0.9);
+            border-radius: calc(var(--radius-md) - 2px);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        .hero-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+            text-transform: capitalize;
+        }
+
+        .hero-conf {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+
+        /* Timeline Track */
+        .emotion-history-track {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align to right so new ones appear at end */
+            gap: 15px;
+            height: 100%;
+            overflow: hidden;
+            padding: 0 20px;
+            mask-image: linear-gradient(to right, transparent, black 20%);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 20%);
+        }
+
+        .emoji-item {
+            font-size: 3.5rem; /* Big sticker style */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: popIn 0.5s forwards;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+            cursor: default;
+            user-select: none;
+        }
+        
+        .emoji-item:hover {
+            transform: scale(1.2) translateY(-5px);
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.2));
+            z-index: 10;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* Metric Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Text Transcript */
+        .transcript-card {
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transcript-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            font-style: italic;
+            min-height: 3em;
+        }
+
+        /* Controls */
+        .controls-area {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-main {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover { background: #f8fafc; }
+
+        .btn-stop {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+        }
+        .btn-stop:hover { background: #fecaca; }
+
+        /* Welcome Overlay */
+        #welcome-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            transition: opacity 0.6s ease;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+                height: auto;
+                overflow-y: auto;
+            }
+            .video-container { height: 400px; }
+        }
+    </style>
+</head>
+<body data-emotion="neutral">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; color: white;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">
+            <i class="fa-solid fa-rocket fa-bounce"></i>
+        </div>
+        <h2 style="font-size: 2rem; margin: 0 0 10px 0;">Initializing Models</h2>
+        <p id="loading-msg" style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 30px;">Checking resources...</p>
+        
+        <div style="width: 300px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.3s ease;"></div>
+        </div>
+        <div id="loading-pct" style="margin-top: 10px; font-family: monospace; font-size: 0.9rem;">0%</div>
+        
+        <div id="loading-error" style="display: none; margin-top: 30px; color: #ef4444; max-width: 500px; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px;"></div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcome-overlay">
+        <div style="font-size: 4rem; margin-bottom: 20px;">
+            <i class="fa-solid fa-face-smile-beam"></i>
+        </div>
+        <h1 style="font-size: 3rem; margin: 0;">Emotion AI</h1>
+        <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 40px; max-width: 500px;">
+            Real-time multimodal emotion recognition that sees, hears, and understands you.
+        </p>
+        <button id="btn-enter" class="btn-main" style="background: white; color: #3b82f6; width: 200px;">
+            Start Experience
+        </button>
+    </div>
+
+    <div class="app-layout">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <span>Himal Emotion AI</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="connection-status" style="font-size: 0.9rem; color: var(--text-sub);">Ready</span>
+                <div id="status-dot" style="width: 10px; height: 10px; background: #cbd5e1; border-radius: 50%;"></div>
+            </div>
+        </header>
+
+        <!-- Video Feed -->
+        <div class="video-container" id="video-wrapper">
+            <video id="video" autoplay muted playsinline></video>
+            <img id="server-video" />
+            <canvas id="overlay"></canvas>
+            
+            <!-- Audio Only Placeholder -->
+            <div id="audio-placeholder" class="audio-placeholder">
+                <div class="audio-wave">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <h3 style="margin-top: 20px;">Audio Only Mode</h3>
+                <p style="opacity: 0.7;">Camera unavailable. Listening to your voice...</p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <aside class="dashboard">
+            <!-- Hero Emotion -->
+            <div class="hero-card">
+                <div class="hero-inner">
+                    <div class="hero-title">Current Emotion</div>
+                    <div class="hero-value" id="fused-emotion">Neutral</div>
+                    <div class="hero-conf" id="fused-conf">Confidence: 0%</div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="chart-container" style="display: flex; flex-direction: column;">
+                <div class="metric-label"><i class="fa-solid fa-clock-rotate-left"></i> Emotion History</div>
+                <div id="emotion-history" class="emotion-history-track">
+                    <!-- Emojis will appear here -->
+                    <span class="emoji-item" style="opacity:0.3">😐</span>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label"><i class="fa-solid fa-face-viewfinder"></i> Face</div>
+                    <div class="metric-value" id="vision-emotion">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label"><i class="fa-solid fa-microphone-lines"></i> Voice Tone</div>
+                    <div class="metric-value" id="audio-emotion">-</div>
+                </div>
+            </div>
+
+            <!-- Transcript -->
+            <div class="transcript-card" onclick="restartASR()" style="cursor: pointer;" title="Click to restart ASR if stuck">
+                <div class="metric-label">
+                    <i class="fa-solid fa-quote-left"></i> Speech Content
+                    <span id="asr-indicator" style="margin-left: 10px; font-size: 0.7em; color: var(--text-sub);"><i class="fas fa-circle"></i></span>
+                    <span id="asr-debug-info" style="margin-left: 10px; font-size: 0.7em; color: var(--text-sub); font-family: monospace;"></span>
+                    <span id="text-emotion-badge" style="margin-left: auto; font-size: 0.8em; background: var(--primary-light); color: var(--primary-color); padding: 2px 8px; border-radius: 10px;">-</span>
+                </div>
+                <div class="transcript-text" id="text-content">
+                    Waiting for speech...
+                </div>
+                <div id="speech-error" role="status" style="font-size: 0.8rem; color: #ef4444; margin-top: 8px;"></div>
+                <div onclick="event.stopPropagation()" style="margin-top: 10px;">
+                    <label for="microphone-select">麦克风</label>
+                    <select id="microphone-select" aria-label="选择麦克风" style="width: 100%;" disabled>
+                        <option value="">系统默认（启动并授权后可选择）</option>
+                    </select>
+                    <div id="microphone-current" role="status" style="font-size: 0.8rem; margin-top: 6px;">当前设备：未启动</div>
+                    <div id="microphone-error" role="status" style="font-size: 0.8rem; color: #ef4444;"></div>
+                </div>
+                <!-- Mic Volume Visualizer -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                    <div style="flex-grow: 1; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                        <div id="mic-volume-bar" style="width: 0%; height: 100%; background: var(--primary-color); transition: width 0.1s;"></div>
+                    </div>
+                    <span id="mic-volume-text" style="font-size: 0.7rem; color: var(--text-sub); min-width: 30px;">0%</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-area">
+                <button id="btn-realtime" class="btn-main">
+                    <i class="fa-solid fa-camera"></i> Sense Your Emotion
+                </button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                     <input type="file" id="video-file" accept="video/*" style="display: none;">
+                     <button class="btn-secondary" onclick="document.getElementById('video-file').click()">
+                        <i class="fa-solid fa-upload"></i> Upload Video
+                     </button>
+                     <button id="btn-demo" class="btn-secondary">
+                        <i class="fa-solid fa-play"></i> Demo
+                     </button>
+                </div>
+
+                <button id="btn-stop" class="btn-main btn-stop" style="display: none;">
+                    <i class="fa-solid fa-stop"></i> Stop Analysis
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <canvas id="capture-canvas" style="display:none;"></canvas>
+
+    <script>
+        // --- Configuration & State ---
+        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        let wsRealtime = null;
+        let wsServer = null;
+        let isConnected = false;
+        let serverMode = false;
+        let audioOnlyMode = false;
+        let globalKillSwitch = false; // NEW: Strict flag to stop everything
+        
+        // Timers
+        let realtimeTimer = null;
+        let lastVideoSendTs = 0;
+        let lastAudioSendTs = 0;
+        
+        // DOM Elements
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        const ctx = overlay.getContext('2d');
+        const captureCanvas = document.getElementById('capture-canvas');
+        const captureCtx = captureCanvas.getContext('2d');
+        const videoWrapper = document.getElementById('video-wrapper');
+        
+        // --- Emotion Emoji Map ---
+        const emotionEmojis = {
+            "neutral": "😐",
+            "happy": "😆", 
+            "joy": "😆",
+            "sad": "😢",
+            "sadness": "😢",
+            "angry": "😡",
+            "anger": "😡",
+            "surprise": "😲",
+            "fear": "😱",
+            "disgust": "🤢"
+        };
+        const emotionHistoryContainer = document.getElementById('emotion-history');
+
+        // --- Theme Engine ---
+        function updateTheme(emotion) {
+            document.body.setAttribute('data-emotion', emotion.toLowerCase());
+            
+            // Note: Chart color update removed as chart is replaced by emoji track
+        }
+
+        // --- Logic: Browser ASR ---
+        let recognition = null;
+        let isASRRunning = false;
+        const USE_BROWSER_ASR = false;
+        let videoSendInFlight = false;
+        
+        function setupASR() {
+            if (!USE_BROWSER_ASR) {
+                document.getElementById('text-content').innerText = "等待语音...";
+                document.getElementById('asr-debug-info').innerText = "[Local Whisper]";
+                document.getElementById('asr-indicator').style.color = "#22c55e";
+                return;
+            }
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                document.getElementById('text-content').innerText = "ASR requires HTTPS or Localhost to work.";
+                document.getElementById('asr-indicator').style.color = "#ef4444";
+                return;
+            }
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                document.getElementById('text-content').innerText = "ASR not supported in this browser.";
+                return;
+            }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            // --- Stability Tweak: Use non-continuous mode and auto-restart ---
+            // Continuous mode can be unreliable in some browsers. 
+            // Setting it to false and restarting on 'end' is a common robust pattern.
+            recognition.continuous = false; 
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onstart = () => {
+                isASRRunning = true;
+                console.log("ASR Service Started");
+                document.getElementById('asr-debug-info').innerText = "[Started]";
+                document.getElementById('connection-status').innerText = "ASR Active";
+                document.getElementById('asr-indicator').style.color = "#22c55e"; 
+                document.getElementById('asr-indicator').classList.add('fa-beat');
+            };
+
+            recognition.onsoundstart = () => {
+                console.log("ASR Sound Detected");
+                document.getElementById('asr-debug-info').innerText = "[Sound Detected]";
+                document.getElementById('text-content').innerText = "Listening...";
+            };
+
+            recognition.onspeechstart = () => {
+                console.log("ASR Speech Detected");
+                document.getElementById('asr-debug-info').innerText = "[Speech Detected]";
+                document.getElementById('text-content').innerText = "Analyzing...";
+                document.getElementById('asr-indicator').style.boxShadow = "0 0 15px #22c55e";
+            };
+
+            recognition.onspeechend = () => {
+                console.log("ASR Speech Ended");
+                document.getElementById('asr-debug-info').innerText = "[Processing...]";
+                document.getElementById('asr-indicator').style.boxShadow = "none";
+            };
+
+            recognition.onresult = (event) => {
+                if (globalKillSwitch) return;
+                console.log("ASR Result:", event);
+                document.getElementById('asr-debug-info').innerText = "[Got Result]";
+                let final = '';
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const res = event.results[i];
+                    const transcript = res[0].transcript;
+                    if (res.isFinal) final += transcript;
+                    else interim += transcript;
+                }
+
+                const txtEl = document.getElementById('text-content');
+                if (final) {
+                    txtEl.innerText = `"${final}"`;
+                    txtEl.style.opacity = 1;
+                    sendText(final);
+                } else if (interim) {
+                    txtEl.innerText = `...${interim}...`;
+                    txtEl.style.opacity = 0.6;
+                }
+            };
+            
+            recognition.onerror = (e) => {
+                console.error("ASR Error", e);
+                document.getElementById('asr-debug-info').innerText = `[Error: ${e.error}]`;
+                isASRRunning = false;
+                document.getElementById('asr-indicator').style.color = "#ef4444";
+                document.getElementById('asr-indicator').classList.remove('fa-beat');
+                
+                if (e.error === 'network') {
+                    document.getElementById('text-content').innerText = "Cloud ASR blocked. Switching to Local ASR...";
+                    document.getElementById('asr-debug-info').innerText = "[Local Mode]";
+                    document.getElementById('asr-indicator').style.color = "#f59e0b"; // Amber for fallback
+                    return;
+                }
+                
+                if (e.error === 'no-speech') {
+                    restartASR();
+                    return;
+                }
+                document.getElementById('connection-status').innerText = "ASR Error: " + e.error;
+            };
+
+            recognition.onend = () => { 
+                isASRRunning = false;
+                console.log("ASR Session Ended");
+                document.getElementById('asr-indicator').style.color = "#64748b";
+                document.getElementById('asr-indicator').classList.remove('fa-beat');
+                
+                // Auto-restart if we are still supposed to be active
+                if(isConnected && !serverMode) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 100);
+                }
+            };
+        }
+        setupASR();
+
+        function restartASR() {
+            if (!USE_BROWSER_ASR) {
+                document.getElementById('text-content').innerText = "Listening with local Whisper...";
+                document.getElementById('asr-debug-info').innerText = "[Local Whisper]";
+                return;
+            }
+            console.log("Manual ASR Restart triggered");
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+                setTimeout(() => {
+                    try { recognition.start(); } catch(e) { console.error("Manual Start failed", e); }
+                }, 500);
+            }
+        }
+
+        function sendText(text) {
+            if(wsRealtime && wsRealtime.readyState === WebSocket.OPEN) {
+                wsRealtime.send(JSON.stringify({ text_input: text, timestamp: Date.now() }));
+            }
+        }
+
+        // --- Logic: Media & WebSocket ---
+        
+        let audioContext = null;
+        let mediaStream = null;
+        let audioSource = null;
+        let audioProcessor = null;
+        let audioGain = null;
+        let mediaSessionGeneration = 0;
+        const microphoneSelect = document.getElementById('microphone-select');
+        let selectedMicrophoneId = '';
+
+        function microphoneConstraints() {
+            const constraints = { echoCancellation: true, noiseSuppression: true };
+            if (selectedMicrophoneId) constraints.deviceId = { exact: selectedMicrophoneId };
+            return constraints;
+        }
+
+        async function refreshMicrophones(generation, socket) {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                if (!isCurrentMediaSession(generation, socket)) return;
+                microphoneSelect.replaceChildren(new Option('系统默认', ''));
+                devices.filter(device => device.kind === 'audioinput').forEach((device, index) => {
+                    microphoneSelect.add(new Option(device.label || `麦克风 ${index + 1}`, device.deviceId));
+                });
+                microphoneSelect.value = selectedMicrophoneId;
+                microphoneSelect.disabled = false;
+            } catch (err) {
+                if (isCurrentMediaSession(generation, socket)) {
+                    document.getElementById('microphone-error').innerText = `无法列出麦克风：${err.message}`;
+                }
+            }
+        }
+
+        microphoneSelect.addEventListener('change', () => {
+            selectedMicrophoneId = microphoneSelect.value;
+            // Use the existing stop/start generation guard and a fresh backend VAD session.
+            if (isConnected && !serverMode && !globalKillSwitch) startRealtime();
+        });
+        let lastFaces = []; // Persistence for BBoxes
+        let lastFacesTs = 0;
+
+        function isCurrentMediaSession(generation, socket) {
+            return generation === mediaSessionGeneration && socket === wsRealtime &&
+                socket && socket.readyState === WebSocket.OPEN && isConnected && !globalKillSwitch;
+        }
+
+        async function setupMedia(generation, socket) {
+            if (!isCurrentMediaSession(generation, socket)) return;
+            audioOnlyMode = false;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const context = audioContext;
+            try {
+                if (context.state === 'suspended') await context.resume();
+            } catch (err) {
+                if (!isCurrentMediaSession(generation, socket)) return;
+                console.error("AudioContext resume failed", err);
+                return;
+            }
+            if (!isCurrentMediaSession(generation, socket)) return;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: microphoneConstraints()
+                });
+                if (!isCurrentMediaSession(generation, socket)) {
+                    stream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+                handleStream(stream, context, generation, socket);
+
+                if(recognition && !isASRRunning) {
+                    try { recognition.start(); } catch(e) { console.error("ASR Start failed", e); }
+                }
+            } catch (err) {
+                if (!isCurrentMediaSession(generation, socket)) return;
+                console.warn("Camera failed, trying audio only...");
+                try {
+                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: microphoneConstraints() });
+                    if (!isCurrentMediaSession(generation, socket)) {
+                        audioStream.getTracks().forEach(t => t.stop());
+                        return;
+                    }
+                    audioOnlyMode = true;
+                    handleStream(audioStream, context, generation, socket);
+                    if(recognition && !isASRRunning) {
+                        try { recognition.start(); } catch(e) { console.error("ASR Start failed", e); }
+                    }
+                } catch(e) {
+                    if (!isCurrentMediaSession(generation, socket)) return;
+                    microphoneSelect.disabled = microphoneSelect.options.length <= 1;
+                    document.getElementById('microphone-error').innerText = `麦克风打开失败：${e.message}。请检查授权或选择其他设备；不会自动替换指定设备。`;
+                }
+            }
+        }
+
+        function handleStream(stream, context, generation, socket) {
+            mediaStream = stream;
+            const ph = document.getElementById('audio-placeholder');
+            
+            if (audioOnlyMode) {
+                video.style.display = 'none';
+                ph.style.display = 'flex';
+            } else {
+                video.style.display = 'block';
+                ph.style.display = 'none';
+                video.srcObject = stream;
+            }
+
+            // Audio Processing Setup
+            const source = audioSource = context.createMediaStreamSource(stream);
+            const processor = audioProcessor = context.createScriptProcessor(4096, 1, 1);
+            
+            const gainNode = audioGain = context.createGain();
+            gainNode.gain.value = 0;
+            
+            source.connect(processor);
+            processor.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            const track = stream.getAudioTracks()[0];
+            const settings = track.getSettings();
+            document.getElementById('microphone-current').innerText = `当前设备：${track.label || '未提供设备名称'}；输入 ${settings.sampleRate || '?'} Hz → 处理 ${context.sampleRate} Hz`;
+            document.getElementById('microphone-error').innerText = '';
+            refreshMicrophones(generation, socket);
+
+            let audioChunks = [];
+            let audioLen = 0;
+
+            processor.onaudioprocess = (e) => {
+                if (!isCurrentMediaSession(generation, socket)) return;
+                const input = e.inputBuffer.getChannelData(0);
+                
+                // Mic Volume Visualization
+                let sum = 0;
+                for(let i=0; i<input.length; i++) sum += input[i]*input[i];
+                let rms = Math.sqrt(sum/input.length);
+                const volBar = document.getElementById('mic-volume-bar');
+                const volText = document.getElementById('mic-volume-text');
+                if (volBar) {
+                    const volPercent = Math.min(100, Math.floor(rms * 1000)); 
+                    volBar.style.width = `${volPercent}%`;
+                    if (volText) volText.innerText = `${volPercent}%`;
+                    
+                    if (volPercent > 10) volBar.style.background = 'var(--primary-color)';
+                    else volBar.style.background = '#cbd5e1';
+                }
+
+                audioChunks.push(new Float32Array(input));
+                audioLen += input.length;
+
+                if (audioLen >= 4000) { 
+                    const merged = new Float32Array(audioLen);
+                    let offset = 0;
+                    for(let c of audioChunks) { merged.set(c, offset); offset += c.length; }
+                    
+                    sendAudio(merged, context.sampleRate, generation, socket);
+                    audioChunks = [];
+                    audioLen = 0;
+                }
+            };
+        }
+
+        function sendAudio(float32, sampleRate, generation, socket) {
+            if (!isCurrentMediaSession(generation, socket)) return;
+            // Convert to PCM16 Base64
+            const pcm = new Int16Array(float32.length);
+            for(let i=0; i<float32.length; i++) {
+                let s = Math.max(-1, Math.min(1, float32[i]));
+                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            
+            // Safer way to convert Int16Array to Base64
+            const uint8 = new Uint8Array(pcm.buffer);
+            let binary = '';
+            for (let i = 0; i < uint8.length; i++) {
+                binary += String.fromCharCode(uint8[i]);
+            }
+            const b64 = btoa(binary);
+
+            socket.send(JSON.stringify({ 
+                audio_b64: b64, 
+                sample_rate: sampleRate 
+            }));
+        }
+
+        async function sendVideoFrame() {
+            const socket = wsRealtime;
+            const generation = mediaSessionGeneration;
+            if (!isCurrentMediaSession(generation, socket)) return;
+            if(audioOnlyMode || video.videoWidth === 0) return;
+            if(videoSendInFlight) return;
+
+            if (Date.now() - lastVideoSendTs < 100) return; // Cap at ~10 FPS
+            lastVideoSendTs = Date.now();
+            videoSendInFlight = true;
+
+            captureCanvas.width = video.videoWidth;
+            captureCanvas.height = video.videoHeight;
+            captureCtx.drawImage(video, 0, 0);
+            
+            const blob = await new Promise(r => captureCanvas.toBlob(r, 'image/jpeg', 0.6));
+            if (!isCurrentMediaSession(generation, socket)) return;
+            if (!blob) { videoSendInFlight = false; return; }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (!isCurrentMediaSession(generation, socket)) return;
+                if (reader.error) { videoSendInFlight = false; return; }
+                socket.send(JSON.stringify({ image: reader.result }));
+                videoSendInFlight = false;
+            };
+            reader.onerror = () => {
+                if (isCurrentMediaSession(generation, socket)) videoSendInFlight = false;
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        // --- WebSocket Management ---
+
+        function startRealtime() {
+            stopAll();
+            globalKillSwitch = false; // Reset kill switch
+            serverMode = false;
+            document.getElementById('server-video').style.display = 'none';
+            video.style.display = 'block';
+            document.getElementById('asr-indicator').style.display = 'inline'; // Show ASR dot in realtime mode
+
+            const generation = mediaSessionGeneration;
+            const socket = wsRealtime = new WebSocket(`${wsScheme}://${window.location.host}/ws_realtime`);
+            socket.onopen = () => {
+                if (generation !== mediaSessionGeneration || socket !== wsRealtime || globalKillSwitch) return;
+                isConnected = true;
+                setUIState('active');
+                setupMedia(generation, socket);
+                realtimeTimer = setInterval(sendVideoFrame, 100);
+            };
+            socket.onmessage = (e) => {
+                if (isCurrentMediaSession(generation, socket)) handleResponse(JSON.parse(e.data));
+            };
+            socket.onclose = () => {
+                if (generation === mediaSessionGeneration && socket === wsRealtime) stopAll();
+            };
+        }
+
+        function startServerVideo(source) {
+            stopAll();
+            globalKillSwitch = false; // Reset kill switch
+            serverMode = true;
+            document.getElementById('server-video').style.display = 'block';
+            video.style.display = 'none';
+            document.getElementById('audio-placeholder').style.display = 'none'; // Force hide audio placeholder
+            
+            // Explicitly force stop ASR to be sure
+            if (recognition) {
+                 try { recognition.stop(); recognition.abort(); } catch(e) {}
+            }
+            isASRRunning = false;
+            document.getElementById('connection-status').innerText = "Video Analysis Mode";
+            document.getElementById('asr-indicator').style.display = 'none'; // Hide ASR dot in video mode
+
+            wsServer = new WebSocket(`${wsScheme}://${window.location.host}/ws_server_video`);
+            wsServer.onopen = () => {
+                setUIState('active');
+                wsServer.send(JSON.stringify({ source: source, multimodal: true }));
+            };
+            wsServer.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                  if (data.error) {
+                      document.getElementById('connection-status').innerText = 'Demo Error';
+                      document.getElementById('text-content').innerText = data.error;
+                      document.getElementById('fused-conf').innerText = 'Server video failed';
+                      return;
+                  }
+                if(data.frame) document.getElementById('server-video').src = data.frame;
+                if(data.frame_width) window.serverFrameWidth = data.frame_width;
+                if(data.frame_height) window.serverFrameHeight = data.frame_height;
+                handleResponse(data);
+            };
+            wsServer.onclose = () => setUIState('inactive');
+        }
+
+        function stopAll() {
+            globalKillSwitch = true; // Block any incoming async callbacks
+            mediaSessionGeneration += 1;
+            isConnected = false;
+            microphoneSelect.disabled = true;
+            document.getElementById('microphone-current').innerText = '当前设备：未启动';
+            document.getElementById('microphone-error').innerText = '';
+            
+            if(wsRealtime) { wsRealtime.onopen = null; wsRealtime.onmessage = null; wsRealtime.onclose = null; wsRealtime.close(); }
+            if(wsServer) { wsServer.onopen = null; wsServer.onmessage = null; wsServer.onclose = null; wsServer.close(); }
+            wsRealtime = null;
+            wsServer = null;
+            
+            if(recognition) {
+                recognition.onend = null; // Prevent auto-restart
+                try { recognition.stop(); recognition.abort(); } catch(e) {}
+            }
+            
+            if(realtimeTimer) clearInterval(realtimeTimer);
+            realtimeTimer = null;
+            videoSendInFlight = false;
+            lastVideoSendTs = 0;
+
+            if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            mediaStream = null;
+            if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
+
+            if(audioProcessor) { audioProcessor.onaudioprocess = null; audioProcessor.disconnect(); }
+            if(audioSource) audioSource.disconnect();
+            if(audioGain) audioGain.disconnect();
+            audioProcessor = null;
+            audioSource = null;
+            audioGain = null;
+            if(audioContext && audioContext.state !== 'closed') {
+                audioContext.close().catch(e => console.warn("AudioContext close failed", e));
+            }
+            audioContext = null;
+            
+            // UI Cleanup: Force clear detection results
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            document.getElementById('vision-emotion').innerText = "-";
+            document.getElementById('audio-emotion').innerText = "-";
+            document.getElementById('fused-emotion').innerText = "Stopped";
+            document.getElementById('fused-conf').innerText = "Analysis inactive";
+            document.getElementById('text-content').innerText = "Waiting for start...";
+            document.getElementById('mic-volume-bar').style.width = "0%";
+            document.getElementById('mic-volume-text').innerText = "0%";
+            document.getElementById('asr-indicator').style.display = 'none';
+            document.getElementById('connection-status').innerText = "Stopped";
+            
+            setUIState('inactive');
+        }
+
+        // --- UI Updates ---
+
+        function setUIState(state) {
+            const btnStart = document.getElementById('btn-realtime');
+            const btnStop = document.getElementById('btn-stop');
+            const statusTxt = document.getElementById('connection-status');
+            const statusDot = document.getElementById('status-dot');
+            const vidContainer = document.getElementById('video-wrapper');
+
+            if (state === 'active') {
+                btnStart.style.display = 'none';
+                btnStop.style.display = 'flex';
+                statusTxt.innerText = "Live Analysis";
+                statusDot.style.background = "#22c55e"; // Green
+                statusDot.style.boxShadow = "0 0 10px #22c55e";
+                vidContainer.classList.add('active');
+            } else {
+                btnStart.style.display = 'flex';
+                btnStop.style.display = 'none';
+                statusTxt.innerText = "Ready";
+                statusDot.style.background = "#cbd5e1"; // Grey
+                statusDot.style.boxShadow = "none";
+                vidContainer.classList.remove('active');
+                updateTheme('neutral');
+            }
+        }
+
+        function handleResponse(data) {
+            if (!data || globalKillSwitch) return;
+
+            // 主卡片与历史只展示最终融合结果，人脸结果独立展示。
+            const displayedEmotion = data.fusion;
+            if (displayedEmotion && displayedEmotion.emotion && Number.isFinite(displayedEmotion.confidence) && displayedEmotion.confidence > 0) {
+                const emo = displayedEmotion.emotion;
+                const conf = ((displayedEmotion.confidence || 0) * 100).toFixed(0);
+                
+                document.getElementById('fused-emotion').innerText = emo || "Neutral";
+                document.getElementById('fused-conf').innerText = `Confidence: ${conf}%`;
+                
+                updateTheme(emo || "neutral");
+                
+                // --- Update Emoji History ---
+                // Add new emoji only if it changed or every N frames to avoid clutter?
+                // For now, let's add one every second or if emotion changes significantly?
+                // Actually, let's just add one every time but limit the rate.
+                
+                if (!window.lastEmojiTime || Date.now() - window.lastEmojiTime > 800) {
+                     window.lastEmojiTime = Date.now();
+                     
+                     const emojiChar = emotionEmojis[(emo || "neutral").toLowerCase()] || "😐";
+                     const span = document.createElement('span');
+                     span.className = 'emoji-item';
+                     span.innerText = emojiChar;
+                     span.title = `${emo} (${conf}%)`;
+                     
+                     emotionHistoryContainer.appendChild(span);
+                     
+                     // Keep last 12 items
+                     while (emotionHistoryContainer.children.length > 12) {
+                         emotionHistoryContainer.removeChild(emotionHistoryContainer.firstChild);
+                     }
+                }
+            } else {
+                document.getElementById('fused-emotion').innerText = 'Waiting for detection';
+                document.getElementById('fused-conf').innerText = 'Confidence: -';
+            }
+
+            // Update Metrics
+            const debug = data.debug || {};
+            const visionEl = document.getElementById('vision-emotion');
+            const visionError = debug.vision_error || data.vision_error;
+            visionEl.title = visionError || '';
+            visionEl.style.color = visionError ? '#ef4444' : '';
+            if (visionError || debug.has_vision_model === false) {
+                visionEl.innerText = visionError ? `模型错误: ${visionError}` : (debug.models_loading ? '加载中...' : '模型不可用');
+                lastFaces = [];
+                lastFacesTs = 0;
+                ctx.clearRect(0, 0, overlay.width, overlay.height);
+            } else if (data.vision && data.vision.length > 0) {
+                document.getElementById('vision-emotion').innerText = data.vision[0].emotion;
+                lastFaces = data.vision;
+                lastFacesTs = Date.now();
+                drawFaces(data.vision);
+            } else {
+                // Persistence logic: keep last faces for 500ms
+                if (Date.now() - lastFacesTs < 500) {
+                    drawFaces(lastFaces);
+                } else {
+                    document.getElementById('vision-emotion').innerText = '未检测到人脸';
+                    ctx.clearRect(0, 0, overlay.width, overlay.height);
+                }
+            }
+
+            const audioEl = document.getElementById('audio-emotion');
+            const audioError = debug.audio_error || data.audio_error || (!debug.has_audio_model && debug.model_load_error);
+            audioEl.style.color = audioError ? '#ef4444' : '';
+            audioEl.title = audioError || '';
+            if (audioError) {
+                audioEl.innerText = `失败: ${audioError}`;
+            } else if (data.audio) {
+                audioEl.innerText = data.audio.emotion || '-';
+            } else if (debug.models_loading || data.status === 'loading') {
+                audioEl.innerText = '加载中...';
+            } else if (data.debug) {
+                audioEl.innerText = debug.has_audio_model ? '等待语音...' : '模型不可用';
+            }
+
+            // Update ASR & Text
+            if (data.text) {
+                const badge = document.getElementById('text-emotion-badge');
+                const heuristic = data.text.confidence_kind === 'heuristic-uncalibrated';
+                const score = !heuristic && Number.isFinite(data.text.confidence) ? ` ${(data.text.confidence * 100).toFixed(0)}%` : '';
+                badge.innerText = `${data.text.emotion || '-'}${score}${heuristic ? '（关键词规则，非模型）' : ''}`;
+                badge.title = `model: ${data.text.model || '-'}; source: ${data.text.source || '-'}; labels: ${(data.text.labels || []).join(', ')}${heuristic ? '；分数为未校准规则支持度，不是准确率' : ''}`;
+                // If backend transcribes something, show it and clear any "Waiting" messages
+                if (data.text.text && data.text.text.trim().length > 0) {
+                    const txtEl = document.getElementById('text-content');
+                    txtEl.innerText = `"${data.text.text}"`;
+                    txtEl.style.opacity = 1;
+                }
+            }
+
+            if (data.debug && (!USE_BROWSER_ASR || serverMode)) {
+                // 状态只取本次后端数据，未触发懒加载时应等待语音而非永久加载中。
+                const asrInfo = document.getElementById('asr-debug-info');
+                const txtEl = document.getElementById('text-content');
+                const asrError = debug.vad_error || debug.asr_error || (!debug.has_text_model && debug.model_load_error);
+                const textError = debug.text_error || debug.text_load_error;
+                let state = debug.received_audio_chunks > 0 ? 'VAD 尚未检出有效语音段' : '等待麦克风音频';
+                if (debug.asr_load_error) state = 'ASR 加载失败';
+                else if (asrError) state = '语音识别失败';
+                else if (debug.asr_loading || (!debug.has_text_model && debug.models_loading)) state = '加载中';
+                else if (debug.is_transcribing || debug.asr_pending_segments > 0) state = '识别中';
+                else if (!debug.has_text_model) state = '模型不可用';
+                else if (debug.asr_last_result === 'empty') state = 'ASR 已处理语音段，但识别为空';
+                else if (debug.asr_last_result === 'text') state = '等待下一段语音';
+                asrInfo.innerText = `[${state}]`;
+                const errorKey = JSON.stringify([asrError || null, textError || null]);
+                if (errorKey !== window.__speechErrorKey) {
+                    window.__speechErrorKey = errorKey;
+                    if (asrError || textError) console.error('Speech pipeline errors', { asrError, textError });
+                }
+                const safeWeightsMissing = textError && /safetensors|torch.*2\.6|torch\.load/i.test(textError);
+                document.getElementById('speech-error').innerText = [
+                    asrError ? '语音识别失败，请查看控制台详细错误。' : '',
+                    textError ? (safeWeightsMissing ? '文本模型缺少安全权重：中文暂用规则基线，英文暂用 TextBlob；不影响语音转写。' : '文本情绪模型异常，请查看控制台。') : ''
+                ].filter(Boolean).join(' ');
+                asrInfo.style.color = asrError ? '#ef4444' : '#64748b';
+                document.getElementById('asr-indicator').style.color = asrError ? '#ef4444' : '#64748b';
+                if (!(data.text && data.text.text)) {
+                    if (debug.last_text) txtEl.innerText = `"${debug.last_text}"`;
+                    else txtEl.innerText = state;
+                    document.getElementById('text-emotion-badge').innerText = '-';
+                }
+            }
+        }
+
+        function drawFaces(faces) {
+            const displayEl = serverMode ? document.getElementById('server-video') : video;
+            if (!displayEl.clientWidth || !displayEl.clientHeight) return;
+            
+            // Sync overlay size to visual display size
+            overlay.width = displayEl.clientWidth;
+            overlay.height = displayEl.clientHeight;
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+            const srcW = serverMode ? (window.serverFrameWidth || 640) : video.videoWidth;
+            const srcH = serverMode ? (window.serverFrameHeight || 480) : video.videoHeight;
+            if (!srcW || !srcH) return;
+
+            // Handle object-fit: contain
+            const scale = Math.min(overlay.width / srcW, overlay.height / srcH);
+            const offsetX = (overlay.width - srcW * scale) / 2;
+            const offsetY = (overlay.height - srcH * scale) / 2;
+
+            const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-color');
+
+            faces.forEach(face => {
+                let [x, y, w, h] = face.bbox;
+                const sx = offsetX + x * scale;
+                const sy = offsetY + y * scale;
+                const sw = w * scale;
+                const sh = h * scale;
+
+                ctx.strokeStyle = primaryColor;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(sx, sy, sw, sh);
+
+                // Draw Label with Emotion & Confidence
+                ctx.fillStyle = primaryColor;
+                const emotionText = face.emotion || "Unknown";
+                const confidenceText = face.confidence ? `${(face.confidence * 100).toFixed(0)}%` : "";
+                const label = `${emotionText} ${confidenceText}`;
+                
+                ctx.font = 'bold 16px Outfit, sans-serif';
+                const textWidth = ctx.measureText(label).width;
+                ctx.fillRect(sx, sy - 25, textWidth + 10, 25);
+                
+                ctx.fillStyle = 'white';
+                ctx.fillText(label, sx + 5, sy - 7);
+            });
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('btn-enter').addEventListener('click', () => {
+            document.getElementById('welcome-overlay').style.opacity = 0;
+            setTimeout(() => document.getElementById('welcome-overlay').style.display = 'none', 600);
+            
+            // Show Loading Overlay
+            const loader = document.getElementById('loading-overlay');
+            loader.style.display = 'flex';
+            
+            // Start Polling Status
+            pollStartupStatus();
+            
+            // Trigger Init (just in case)
+            fetch('/init_models', {method: 'POST'});
+        });
+        
+        async function pollStartupStatus() {
+            const msgEl = document.getElementById('loading-msg');
+            const barEl = document.getElementById('loading-bar');
+            const pctEl = document.getElementById('loading-pct');
+            const errEl = document.getElementById('loading-error');
+            const loader = document.getElementById('loading-overlay');
+            
+            while(true) {
+                try {
+                    const res = await fetch('/startup_status');
+                    const data = await res.json();
+                    
+                    // 部分模型失败时允许使用已就绪模态，错误仍显示在各模态状态中。
+                    if (data.status === 'degraded') {
+                        console.warn('部分模型初始化失败', data.model_errors);
+                        msgEl.innerText = data.message;
+                        loader.style.display = 'none';
+                        break;
+                    }
+
+                    if (data.error) {
+                        msgEl.innerText = "Startup Failed";
+                        errEl.style.display = 'block';
+                        errEl.innerText = data.error;
+                        barEl.style.background = '#ef4444';
+                        return; // Stop polling
+                    }
+                    
+                    msgEl.innerText = data.message;
+                    barEl.style.width = `${data.progress}%`;
+                    pctEl.innerText = `${data.progress}%`;
+                    
+                    if (data.status === 'ready' || data.progress >= 100) {
+                        setTimeout(() => {
+                            loader.style.opacity = 0;
+                            setTimeout(() => loader.style.display = 'none', 500);
+                        }, 500);
+                        break;
+                    }
+                } catch(e) {
+                    console.error("Polling error", e);
+                }
+                
+                await new Promise(r => setTimeout(r, 500));
+            }
+        }
+
+        document.getElementById('btn-realtime').addEventListener('click', startRealtime);
+        document.getElementById('btn-stop').addEventListener('click', stopAll);
+        document.getElementById('video-file').addEventListener('change', async (e) => {
+            if(!e.target.files[0]) return;
+            
+            // Show loading state immediately
+            const btn = document.querySelector('button[onclick="document.getElementById(\'video-file\').click()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append("file", e.target.files[0]);
+            
+            try {
+                console.log("Starting upload...");
+                const res = await fetch("/upload_video", {method: "POST", body: fd});
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Upload failed with status " + res.status);
+                }
+                const data = await res.json();
+                console.log("Upload success, starting video:", data.source);
+                startServerVideo(data.source);
+            } catch(err) { 
+                console.error("Upload error:", err);
+                alert("Upload failed: " + err.message); 
+            } finally {
+                // Restore button state
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                // Clear input so same file can be selected again
+                e.target.value = '';
+            }
+        });
+        document.getElementById('btn-demo').addEventListener('click', () => startServerVideo("static/test_demo.mp4"));
+
+    </script>
+</body>
+</html>

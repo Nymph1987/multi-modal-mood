@@ -1,60 +1,32 @@
-
-
-# -------------------------------
-# Python
-# -------------------------------
+# Python caches and local environments
 __pycache__/
 *.py[cod]
-*.pyo
-*.so
-
-# Jupyter Notebook checkpoints
+.pytest_cache/
 .ipynb_checkpoints/
-
-# Virtual environments
 .venv/
 venv/
 env/
 *.egg-info/
 
-# -------------------------------
-# 深度学习常见大文件
-# -------------------------------
-# 数据目录
-data/
-history/
-datasets/
-logs/
-
-# 模型参数与 checkpoint
-*.pt
-*.pth
-*.ckpt
-checkpoints/
-save/
-outputs/
-
-# 训练日志 & 可视化结果
-logs/
-runs/
+# Runtime logs, uploads and temporary debugging sessions
+/logs/
 *.log
-*.out
+/.dbg/
+/debug-*.md
+/uploads/
 
-# 缓存文件
-*.pkl
-*.npz
-*.npy
-*.h5
-*.hdf5
+# Local downloaded models (keep third-party source and examples visible)
+/faster-whisper-large-v3/
+/wav2vec2_checkpoints/
+/third_party/yolov8-face/weights/
+/third_party/face_classification/trained_models/**/*.hdf5
+/third_party/face_classification/trained_models/**/*.h5
 
-# -------------------------------
-# IDE & 编辑器文件
-# -------------------------------
+# Local project backup
+/himalgg_web_1.tar.gz
+
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 .DS_Store
-data/
-*.pkl
-*.pt
-*.pth
